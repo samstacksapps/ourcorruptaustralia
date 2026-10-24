@@ -16,10 +16,33 @@ ACTS = {
 }
 
 
-def draft(body_name: str, body_type: str, entity_name: str, first: str | None, last: str | None,
-          refs: list[str] | None = None) -> str:
+def date_range(first_payment: date | None, last_payment: date | None,
+               first_item: date | None) -> tuple[date | None, date | None]:
+    """The period the request covers.
+
+    It starts 12 months before the first payment, so the procurement and approval records
+    that came before it are included, or at the first agenda item naming the entity if that
+    is earlier. It ends at the last payment (or the first item when nothing was paid).
+    """
+    starts = [d for d in (first_payment and _year_before(first_payment), first_item) if d]
+    start = min(starts) if starts else None
+    end = last_payment or first_item
+    return start, end
+
+
+def _year_before(d: date) -> date:
+    try:
+        return d.replace(year=d.year - 1)
+    except ValueError:  # 29 February
+        return d.replace(year=d.year - 1, day=28)
+
+
+def draft(body_name: str, body_type: str, entity_name: str, first_payment: date | None,
+          last_payment: date | None, first_item: date | None = None, refs: list[str] | None = None) -> str:
     act, days = ACTS[body_type]
-    period = f"between {first} and {last}" if first and last else "in the last two financial years"
+    start, end = date_range(first_payment, last_payment, first_item)
+    period = (f"between {_long(start)} and {_long(end)}" if start and end
+              else "in the last two financial years")
     refs_line = f" including {', '.join(refs)}" if refs else ""
     return f"""To the FOI Coordinator
 {body_name}
@@ -45,6 +68,10 @@ Name:
 Address for correspondence:
 Date:
 """
+
+
+def _long(d: date) -> str:
+    return f"{d.day} {d:%B %Y}"
 
 
 def due_date(sent: date, body_type: str) -> date:

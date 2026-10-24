@@ -94,9 +94,24 @@ def plant_post_award_overrun(r):
 
 
 def plant_repeat_winner(r):
+    # Three wins of seven tenders in 2024-25 (43 per cent).
     for i, d in enumerate([date(2024, 10, 24), date(2025, 1, 23), date(2025, 4, 24)]):
         add_tender(r, f"RFT 7{i}/2024", d, "Sunrise Bus Services", 30000.0, ["Other Coaches Pty Ltd"])
     return "Sunrise Bus Services"
+
+
+def test_repeat_winner_needs_three_wins_as_well_as_the_share(tmp_path):
+    records = clean_records()
+    # 2023-24 has two clean tenders; add three more, two won by Sunrise: 2 of 5 is 40 per cent.
+    add_tender(records, "RFT 80/2023", date(2023, 9, 28), "Sunrise Bus Services", 30000.0, ["Other Coaches Pty Ltd"])
+    add_tender(records, "RFT 81/2023", date(2024, 2, 22), "Sunrise Bus Services", 30000.0, ["Other Coaches Pty Ltd"])
+    add_tender(records, "RFT 82/2023", date(2024, 4, 26), "Other Coaches Pty Ltd", 30000.0, ["Sunrise Bus Services"])
+    run = build(records, tmp_path / "two")
+    assert run.flagged("repeat_winner") == set()
+
+    add_tender(records, "RFT 83/2023", date(2024, 6, 20), "Sunrise Bus Services", 30000.0, ["Other Coaches Pty Ltd"])
+    run = build(records, tmp_path / "three")  # 3 of 6, 50 per cent
+    assert run.flagged("repeat_winner") == {run.entity("Sunrise Bus Services")}
 
 
 def plant_related_party_not_declared(r):
@@ -112,7 +127,7 @@ def plant_campaign_funder_wins(r):
 
 
 def plant_oag_control_weakness(r):
-    r["audit_findings"].append({"report_year": 2024, "report_title": "Local Government 2022-23 Financial Audit Results",
+    r["audit_findings"].append({"report_year": 2024, "report_title": "Fictional Auditor General finding (fixture, 2024)",
                                 "area": "Payroll", "finding": "Payroll changes not independently reviewed"})
     return None
 

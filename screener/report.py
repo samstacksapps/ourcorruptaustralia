@@ -66,6 +66,8 @@ def _context(con, report_dir: Path, decisions: dict) -> dict:
         key, rank, body, entity, sc, money, n, flags, summary, model, prompt_id, status = c
         span = con.execute("SELECT min(paid_date), max(paid_date) FROM payments WHERE council_id = ? AND entity_id = ?",
                            [body, entity]).fetchone()
+        first_item = con.execute("SELECT min(meeting_date) FROM items WHERE council_id = ? AND list_contains(entity_ids, ?)",
+                                 [body, entity]).fetchone()[0]
         refs = [r[0] for r in con.execute(
             "SELECT DISTINCT tender_ref FROM tenders WHERE council_id = ? AND entity_id = ? AND is_winner ORDER BY 1",
             [body, entity]).fetchall()]
@@ -77,8 +79,7 @@ def _context(con, report_dir: Path, decisions: dict) -> dict:
             "hits": hits.get((body, entity), []),
             "abn": _abn_facts(con, entities.get(entity, {}).get("abn")),
             "matches": _matches(con, body, entity),
-            "foi": foi.draft(bodies.get(body, body), "council", name,
-                             span[0] and span[0].strftime("%d %B %Y"), span[1] and span[1].strftime("%d %B %Y"), refs),
+            "foi": foi.draft(bodies.get(body, body), "council", name, span[0], span[1], first_item, refs),
             "links": [r[0] for r in con.execute(
                 "SELECT DISTINCT name_norm || ' (' || method || ')' FROM entity_links WHERE entity_id = ? ORDER BY 1",
                 [entity]).fetchall()],
@@ -89,8 +90,11 @@ def _context(con, report_dir: Path, decisions: dict) -> dict:
         h["names"] = [r[0] for r in con.execute(
             "SELECT name_norm FROM entity_links WHERE entity_id = ? AND method = 'fuzzy'", [h["entity_id"]]).fetchall()]
 
-    context_flags = [{"body": bodies.get(b, b), "detail": d} for b, d in con.execute(
-        "SELECT body_id, detail FROM flag_hits WHERE strength = 'context'").fetchall()]
+    context_flags = [
+        {"body": bodies.get(b, b), "detail": d,
+         "fixture": any((e.get("source_url") or "").startswith("fixture://") for e in json.loads(ev or "[]"))}
+        for b, d, ev in con.execute(
+            "SELECT body_id, detail, evidence_json FROM flag_hits WHERE strength = 'context'").fetchall()]
     sources = con.execute("""
         SELECT source_file, source_url, min(fetched_at), max(parser) FROM (
             SELECT source_file, source_url, fetched_at, parser FROM payments UNION ALL
@@ -160,6 +164,9 @@ def _matches(con, body, entity) -> list[str]:
 
 # ---------------------------------------------------------------- html
 
+_FIXTURE_CHIP = '<span class="chip context">fixture</span> '
+
+
 def _money(v) -> str:
     return "" if v is None else f"${v:,.0f}"
 
@@ -171,7 +178,8 @@ def _render(ctx: dict, cal: dict, decisions: dict, git_commit: str, mismatches: 
     parts = [_HEAD, '<main>', _header(open_cases, mode, run_at)]
     if ctx["context"]:
         parts.append('<section class="context"><h2>Context</h2><ul>' + "".join(
-            f"<li><strong>{escape(c['body'])}</strong>: {escape(c['detail'])} Scores for this body are multiplied.</li>"
+            f"<li>{_FIXTURE_CHIP if c['fixture'] else ''}"
+            f"<strong>{escape(c['body'])}</strong>: {escape(c['detail'])} Scores for this body are multiplied.</li>"
             for c in ctx["context"]) + "</ul></section>")
     parts.append('<section><h2>Case queue</h2>')
     parts.append("".join(_case(c) for c in open_cases) or '<p class="muted">No cases surfaced.</p>')
@@ -304,7 +312,9 @@ def _calibration(cal) -> str:
     unexpected = "".join(f"<li>{escape(u['flag'])} on {escape(u['entity_id'])}: {escape(u['detail'])}</li>" for u in cal["unexpected"])
     verdict = '<p class="ok">Calibration passed.</p>' if cal["ok"] else '<p class="bad">Calibration FAILED.</p>'
     extra = f'<p class="bad">Flags on entities outside the calibration list:</p><ul>{unexpected}</ul>' if unexpected else ""
-    return (f'<section><h2>Calibration</h2>{verdict}{extra}<div class="scroll"><table><thead><tr><th>Case</th><th>Entity or body</th>'
+    checked = sum(1 for r in cal["results"] if not r["status"].startswith("not checked"))
+    heading = f"Calibration: {checked} of {len(cal['results'])} checked"
+    return (f'<section><h2>{escape(heading)}</h2>{verdict}{extra}<div class="scroll"><table><thead><tr><th>Case</th><th>Entity or body</th>'
             f'<th>Flags it should raise</th><th>Status</th><th>Rank in body</th></tr></thead><tbody>{"".join(rows)}</tbody></table></div></section>')
 
 

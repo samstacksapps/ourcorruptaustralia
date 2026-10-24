@@ -109,6 +109,9 @@ post_award_overrun:
     source: "SPEC.md s7: no later tender or variation recorded. A variation is an agenda item naming the winner with one of these words"
 
 repeat_winner:
+  min_wins:
+    value: 3
+    source: "Phase 1 review: a share alone is noise in a small year (2 of 5 is 40 per cent), so at least three wins are required as well"
   min_share:
     value: 0.40
     source: "SPEC.md s7: wins 40 per cent or more of a council's tenders"

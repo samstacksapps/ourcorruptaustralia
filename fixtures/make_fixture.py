@@ -111,6 +111,7 @@ TENDERS = [
     ("RFT 09/2022", "Townsite footpath program", date(2022, 9, 30), date(2022, 10, 27), "Roadline Contracting Pty Ltd", 140000.0, ["Goldfields Asphalt Pty Ltd"], None),
     ("RFT 02/2023", "Parks and gardens maintenance 2023-24", date(2023, 7, 27), date(2023, 8, 24), "Greenway Landscapes Pty Ltd", 88000.0, ["Verdant Grounds Pty Ltd", "Parkline Gardens"], 3),
     ("RFT 04/2023", "Depot ablution block", date(2023, 9, 28), date(2023, 10, 26), "Westridge Construction Pty Ltd", 38000.0, ["Hallmark Builders Pty Ltd", "Coreline Constructions"], 5),
+    ("RFT 06/2023", "Town hall roof repairs", date(2023, 10, 27), date(2023, 11, 23), "Westridge Construction Pty Ltd", 46000.0, ["Coreline Constructions", "Summit Roofing Pty Ltd"], 5),
     ("RFT 07/2023", "Recreation centre upgrade", date(2023, 12, 15), date(2024, 1, 25), "Westridge Construction Pty Ltd", 220000.0, ["Kestrel Building Services Pty Ltd", "Hallmark Builders Pty Ltd"], 5),
     ("RFT 09/2023", "Medical centre refurbishment", date(2024, 2, 29), date(2024, 3, 28), "Kestrel Building Services Pty Ltd", 310000.0, ["Hallmark Builders Pty Ltd", "Coreline Constructions"], None),
     ("RFT 11/2023", "Swimming pool management 2024-2027", date(2024, 4, 26), date(2024, 5, 23), "Brightwater Pool Management", 450000.0, ["Aquatic Leisure Management Pty Ltd"], None),
@@ -359,14 +360,15 @@ def build_records(planted: bool = True, seed: int = SEED) -> dict[str, list[dict
         {"election_date": date(2023, 10, 21), "candidate": "Sarah Quinlan", "giver_raw": "Lakeview Farms", "value": 1000.0},
     ]
 
+    # Invented findings: not taken from any real Auditor General report.
     audit = [
-        {"report_year": 2023, "report_title": "Local Government 2021-22 Financial Audit Results", "area": "Financial reporting",
+        {"report_year": 2023, "report_title": "Fictional Auditor General finding (fixture, 2023)", "area": "Financial reporting",
          "finding": "Fixed asset register not reconciled to the general ledger"},
-        {"report_year": 2024, "report_title": "Local Government 2022-23 Financial Audit Results", "area": "Financial reporting",
+        {"report_year": 2024, "report_title": "Fictional Auditor General finding (fixture, 2024)", "area": "Financial reporting",
          "finding": "Asset revaluation not performed in the required cycle"},
     ]
     if planted:
-        audit.append({"report_year": 2024, "report_title": "Local Government 2022-23 Financial Audit Results", "area": "Purchasing",
+        audit.append({"report_year": 2024, "report_title": "Fictional Auditor General finding (fixture, 2024)", "area": "Purchasing",
                       "finding": "Purchase orders raised after invoices; quotes not retained"})
 
     delegations = [{"role": role, "limit_amount": amount, "source_date": date(2024, 6, 27)} for role, amount in DELEGATIONS]

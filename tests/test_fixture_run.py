@@ -71,8 +71,13 @@ def test_report_lists_the_six_cases(planted_run, tmp_path):
     queue = html.split("<h2>Case queue</h2>")[1].split("<h2>Reconciliation</h2>")[0]
     for name, *_ in make_fixture.CLEAN_SUPPLIERS:
         assert f"<strong>{name.replace('&', '&amp;')}</strong>" not in queue
-    for section in ("Reconciliation", "Calibration", "FOI request draft", "Export decisions.json", "Commit test"):
+    for section in ("Reconciliation", "FOI request draft", "Export decisions.json", "Commit test"):
         assert section in html
+    known = len(settings.calibration()["known_cases"])
+    assert f"<h2>Calibration: 6 of {6 + known} checked</h2>" in html
+    context = html.split('<section class="context">')[1].split("</section>")[0]
+    assert '<span class="chip context">fixture</span>' in context
+    assert "Fictional Auditor General finding" in context
 
 
 def test_noise_decision_keeps_case_dismissed(tmp_path):

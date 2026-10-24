@@ -1,6 +1,6 @@
 -- repeat_winner (weak)
--- A tenderer wins 40 per cent or more of a council's tenders in a financial year with at
--- least four tenders.
+-- A tenderer wins 40 per cent or more of a council's tenders, and at least three of them,
+-- in a financial year with at least four tenders.
 WITH tender_list AS (
     SELECT DISTINCT council_id, tender_ref, fy(coalesce(awarded_date, closed_date)) AS fy
     FROM tenders
@@ -21,3 +21,4 @@ SELECT w.entity_id, w.council_id AS body_id, 'repeat_winner' AS flag, $weight AS
 FROM wins w
 JOIN totals tot ON tot.council_id = w.council_id AND tot.fy = w.fy
 WHERE w.wins / tot.n >= $min_share
+  AND w.wins >= $min_wins
