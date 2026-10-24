@@ -1,0 +1,21 @@
+# Payee names that look like a person's name but are a business, read by screener/privacy.py.
+# One name per line, as printed on the council's list. Never put a private individual here:
+# this file is committed. Names checked by hand against the payment descriptions, 2026-10-24.
+Priestman & Sharp
+BY WORD OF MOUTH
+ERNST & YOUNG
+CONNECT CCS
+CRV AIR
+ARROW BRONZE
+EVERLON BRONZE
+BAGS O'RAGS
+IINET CONNECT BETTER
+LES MILLS ASIA PACIFIC
+Ray White Kambalda
+Napa Kalgoorlie
+Bidfood Kalgoorlie
+Information Proficiency
+Petty Cash-recoup
+Seek AU
+Red dot
+The West

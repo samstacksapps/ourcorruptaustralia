@@ -9,5 +9,9 @@ data/*
 !data/parsed/
 !data/report/
 
+# The name-to-code lookup for private individuals (screener/privacy.py). Never commit it.
+data/private/
+payee_codes.csv
+
 # Fixture rows are synthetic and rebuilt by fixtures/make_fixture.py
 data/parsed/fixture/

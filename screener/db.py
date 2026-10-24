@@ -24,7 +24,7 @@ PROVENANCE = """
 # tables are created so the schema is whole, and are filled from phase 6.
 TABLES = {
     "councils": "council_id VARCHAR, name VARCHAR, region VARCHAR, website VARCHAR, minutes_url VARCHAR, population INTEGER, notes VARCHAR",
-    "payments": "council_id VARCHAR, paid_date DATE, ref VARCHAR, payee_raw VARCHAR, payee_norm VARCHAR, entity_id VARCHAR, description VARCHAR, amount DOUBLE, approver VARCHAR, fy INTEGER",
+    "payments": "council_id VARCHAR, paid_date DATE, ref VARCHAR, payee_raw VARCHAR, payee_norm VARCHAR, entity_id VARCHAR, description VARCHAR, amount DOUBLE, approver VARCHAR, fy INTEGER, section VARCHAR, invoice_ref VARCHAR, statement VARCHAR, parse_note VARCHAR",
     "tenders": "council_id VARCHAR, tender_ref VARCHAR, description VARCHAR, closed_date DATE, awarded_date DATE, tenderer_raw VARCHAR, tenderer_norm VARCHAR, entity_id VARCHAR, is_winner BOOLEAN, contract_amount DOUBLE",
     "gifts": "council_id VARCHAR, recipient_name VARCHAR, recipient_role VARCHAR, giver_raw VARCHAR, giver_norm VARCHAR, entity_id VARCHAR, value DOUBLE, received_date DATE, description VARCHAR",
     "interests": "council_id VARCHAR, person VARCHAR, person_key VARCHAR, role VARCHAR, interest_type VARCHAR, entity_raw VARCHAR, entity_norm VARCHAR, entity_id VARCHAR, detail VARCHAR, return_type VARCHAR, return_date DATE",
@@ -145,6 +145,9 @@ def load_parsed(con: duckdb.DuckDBPyConnection, parsed_dir: Path) -> dict[str, i
             continue
         df = pd.read_csv(path, dtype=str, keep_default_na=False)
         df = df.replace({"": None})
+        # Parsers may add working columns (row keys, layout notes) the table does not keep.
+        table_cols = {c[0] for c in con.execute(f"DESCRIBE {name}").fetchall()}
+        df = df[[c for c in df.columns if c in table_cols]]
         df = _prepare(name, df)
         df.insert(0, "row_id", range(next_id, next_id + len(df)))
         next_id += len(df)

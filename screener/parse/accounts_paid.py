@@ -1,9 +1,16 @@
 """List of accounts paid: PDF in, payment rows out.
 
 Councils publish this as a table attached to the monthly minutes: cheque or EFT number,
-date, payee, description, amount. The header names vary, so columns are found by header
-text. pdfplumber's ruled-table reader is tried first and its text-alignment reader second.
-Phase 2 adds the model fallback for layouts neither can read.
+date, payee, description, amount. Two readers:
+
+- parse(): a ruled or neatly aligned table, columns found by header text. pdfplumber's
+  ruled-table reader is tried first and its text-alignment reader second. The fixture's
+  PDF is read this way.
+- parse_council(): a named council layout from payment_layouts, for real lists with no
+  cell rules, wrapped cells and printed section totals. The manifest names the layout and
+  pages for each file.
+
+The model fallback for layouts neither can read comes later.
 """
 
 from __future__ import annotations
@@ -13,8 +20,10 @@ from datetime import datetime
 
 import pdfplumber
 
+from screener.parse import payment_layouts
+
 PARSER = "accounts_paid.pdfplumber"
-PARSER_VERSION = "1"
+PARSER_VERSION = "2"
 
 _HEADERS = {
     "ref": re.compile(r"chq|cheque|eft|ref|voucher|number|no\.?$", re.I),
@@ -37,6 +46,11 @@ def parse(path) -> list[dict]:
             for table in tables:
                 rows += _rows_from_table(table, page_no)
     return rows
+
+
+def parse_council(path, layout: str, pages) -> payment_layouts.Result:
+    """Return payments, details and printed totals read with a council layout."""
+    return payment_layouts.parse(path, layout, pages)
 
 
 def _rows_from_table(table: list[list], page_no: int) -> list[dict]:

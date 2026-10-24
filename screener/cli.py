@@ -7,16 +7,22 @@ Phase 1 runs on the synthetic fixture only and fetches nothing from the internet
 
 run = parse + build + score + report, then the calibration check. It exits non-zero if a
 planted case is missed or any other entity carries a flag.
+
+Phase 2 parses real council files already downloaded, one folder per council, and checks
+the rows against the totals printed on each PDF. Nothing is built or scored yet:
+
+    python -m screener parse --source council_check
 """
 
 from __future__ import annotations
 
 import argparse
+import csv
 import subprocess
 import sys
 from pathlib import Path
 
-from screener import db, parse, report, score, settings
+from screener import db, parse, privacy, report, score, settings
 
 
 def _paths(args) -> dict:
@@ -48,7 +54,42 @@ def cmd_fetch(args, p) -> int:
     return 0
 
 
+def cmd_parse_councils(args, p) -> int:
+    """Parse each council's newest folder under data/raw/<source>/ and print the check
+    of parsed rows against every printed total. Exits non-zero if any total is missed."""
+    raw_root = Path(args.raw) if args.raw else p["data"] / "raw" / args.source
+    private = privacy.PrivateNames(p["data"] / "private" / "payee_codes.csv", settings.CONFIG / "payee_not_private.txt")
+    ok = True
+    for council_dir in sorted(d for d in raw_root.iterdir() if d.is_dir()):
+        try:
+            folder = parse.latest_folder(council_dir)
+        except FileNotFoundError:
+            continue
+        out = p["data"] / "parsed" / args.source / council_dir.name
+        counts = parse.parse_folder(folder, out, settings.ROOT, private=private)
+        print(f"\n{council_dir.name}: " + ", ".join(f"{t} {n}" for t, n in sorted(counts.items())))
+        totals = out / "payment_totals.csv"
+        if not totals.exists():
+            continue
+        with open(totals, encoding="utf-8") as f:
+            rows = list(csv.DictReader(f))
+        for t in rows:
+            status = "PASS" if t["ok"] == "True" else "FAIL"
+            ok &= status == "PASS"
+            print(f"  {status}  {t['label']:<28} rows {t['rows']:>4}  parsed {float(t['parsed']):>14,.2f}"
+                  f"  printed {float(t['printed']):>14,.2f}  diff {float(t['difference']):>9,.2f}  p{t['page']}")
+    private.save()
+    print(f"\nPrivate names coded: {len(private.codes)} in {private.lookup_path} (git-ignored), {len(private.new)} new this run.")
+    for e in private.new:
+        print(f"  {e['code']}  {e['name']}  ({e['first_council']}, {e['reason']})")
+    if private.new:
+        print("Check the new ones: a business coded by mistake goes in config/payee_not_private.txt.")
+    return 0 if ok else 1
+
+
 def cmd_parse(args, p) -> int:
+    if args.source:
+        return cmd_parse_councils(args, p)
     folder = parse.latest_folder(p["raw"])
     counts = parse.parse_folder(folder, p["parsed"], settings.ROOT)
     print(f"Parsed {folder}: " + ", ".join(f"{t} {n}" for t, n in sorted(counts.items())))
@@ -121,13 +162,14 @@ def main(argv=None) -> int:
     ap = argparse.ArgumentParser(prog="python -m screener", description="Red-flag screener for public money records.")
     ap.add_argument("command", choices=COMMANDS)
     ap.add_argument("--fixture", action="store_true", help="run on the synthetic fixture (phase 1)")
+    ap.add_argument("--source", help="parse only: real downloads under data/raw/<source>/<council>/<date>/ (phase 2)")
     ap.add_argument("--data", help="data folder (default data/)")
     ap.add_argument("--raw", help="folder of downloaded source folders (default data/raw/fixture)")
     ap.add_argument("--db", help="database file (default data/screener.duckdb)")
     ap.add_argument("--report", help="report file (default data/report/index.html)")
     ap.add_argument("--decisions", help="reviewer decisions JSON exported from the report (default data/review/decisions.json)")
     args = ap.parse_args(argv)
-    if args.command != "fetch" and not args.fixture:
-        print("Phase 1 runs on the fixture only. Add --fixture.", file=sys.stderr)
+    if args.command != "fetch" and not args.fixture and not (args.command == "parse" and args.source):
+        print("Only parse --source runs on real files so far; everything else runs on the fixture. Add --fixture.", file=sys.stderr)
         return 2
     return COMMANDS[args.command](args, _paths(args))
