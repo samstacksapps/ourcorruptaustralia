@@ -1,0 +1,13 @@
+# Python environment and caches
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# data/ is git-ignored except parsed rows and the report (SPEC.md section 3)
+data/*
+!data/parsed/
+!data/report/
+
+# Fixture rows are synthetic and rebuilt by fixtures/make_fixture.py
+data/parsed/fixture/

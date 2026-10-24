@@ -1,0 +1,136 @@
+# Every number a flag depends on, with its source.
+# Each entry is {value, source}. Flags read these by name; nothing is hard-coded in the SQL.
+# Statutory references marked "verify" are to be checked against the current legislation
+# when real council data is loaded in phase 2.
+
+common:
+  tender_threshold:
+    value: 250000
+    source: "SPEC.md s7. WA tender threshold, Local Government (Functions and General) Regulations 1996 r 11 (verify current amount)"
+
+entity_resolution:
+  fuzzy_link_min:
+    value: 92
+    source: "SPEC.md s6.3: rapidfuzz token_set_ratio at 92 or more joins one entity"
+  model_review_min:
+    value: 80
+    source: "SPEC.md s6.4: 80 to 92 goes to the model as same, different or unsure"
+  fuzzy_min_tokens:
+    value: 2
+    source: "Guard added in phase 1: token_set_ratio scores 100 whenever one name's tokens are a subset of the other's (EXAMPLE vs SHIRE OF EXAMPLE), so both names need at least this many tokens before a fuzzy link is considered"
+
+scoring:
+  min_distinct_flags:
+    value: 2
+    source: "SPEC.md s2.5 and s7 Scoring: two signals or nothing, unless a strong flag hits"
+
+over_threshold_no_tender:
+  lookback_years:
+    value: 1
+    source: "SPEC.md s7: not a winner in the tenders register that year or the year before"
+  exempt_keywords:
+    value: [WALGA, PREFERRED SUPPLIER, STATE CONTRACT, CUA, COMMON USE ARRANGEMENT]
+    source: "SPEC.md s7: exempt WALGA preferred supplier and State contract purchases where the description says so"
+
+just_under_limit:
+  min_count:
+    value: 3
+    source: "SPEC.md s7: three or more payments"
+  window_months:
+    value: 12
+    source: "SPEC.md s7: within twelve months"
+  lower_pct:
+    value: 0.90
+    source: "SPEC.md s7: between 90 and 100 per cent of an approval limit"
+  upper_pct:
+    value: 1.00
+    source: "SPEC.md s7: between 90 and 100 per cent of an approval limit"
+
+repeat_round_amount:
+  round_to:
+    value: 100
+    source: "SPEC.md s7: same amount to the nearest $100"
+  min_count:
+    value: 4
+    source: "SPEC.md s7: four or more times"
+  window_months:
+    value: 12
+    source: "SPEC.md s7: in twelve months"
+  exempt_keywords:
+    value: [LEASE, RENT, RENTAL, LICENCE, LICENSE, INSURANCE, LOAN, SUBSCRIPTION, RETAINER]
+    source: "SPEC.md s7: where the description does not say lease, rent, licence, insurance, loan, subscription or retainer"
+
+new_abn_payee:
+  months_before:
+    value: 12
+    source: "SPEC.md s7: ABN status-from date within twelve months before the first payment"
+  window_months:
+    value: 12
+    source: "Phase 1 reading of SPEC.md s7: payments are totalled over the twelve months from the first payment"
+  min_total:
+    value: 20000
+    source: "SPEC.md s7: payments total more than $20,000"
+
+unmatched_payee:
+  min_total:
+    value: 20000
+    source: "SPEC.md s7: more than $20,000 in a year"
+
+gift_from_payee:
+  window_months:
+    value: 12
+    source: "SPEC.md s7: within twelve months either side of the gift"
+
+undeclared_at_meeting:
+  councillor_roles:
+    value: [COUNCILLOR, PRESIDENT, MAYOR]
+    source: "SPEC.md s7: a councillor's declared interest. Shire presidents and mayors are elected members"
+  return_valid_months:
+    value: 24
+    source: "Phase 1 choice: an interest counts if declared in a return lodged in the 24 months before the meeting (a primary return plus one annual cycle)"
+
+cover_bidding:
+  min_wins:
+    value: 3
+    source: "SPEC.md s7: a winner with three or more tenders"
+  min_common_losers:
+    value: 2
+    source: "SPEC.md s7: the same set of two or more losers"
+
+post_award_overrun:
+  window_months:
+    value: 24
+    source: "SPEC.md s7: payments in the 24 months after award"
+  overrun_pct:
+    value: 1.30
+    source: "SPEC.md s7: exceed 130 per cent of the contract amount"
+  variation_keywords:
+    value: [VARIATION, CONTRACT EXTENSION, EXTENSION OF CONTRACT]
+    source: "SPEC.md s7: no later tender or variation recorded. A variation is an agenda item naming the winner with one of these words"
+
+repeat_winner:
+  min_share:
+    value: 0.40
+    source: "SPEC.md s7: wins 40 per cent or more of a council's tenders"
+  min_tenders:
+    value: 4
+    source: "SPEC.md s7: in a period with at least four tenders. The period is the financial year"
+
+campaign_funder_wins:
+  window_months:
+    value: 24
+    source: "SPEC.md s7: within two years of the election"
+  grant_keywords:
+    value: [GRANT, SPONSORSHIP, DONATION, COMMUNITY FUNDING]
+    source: "Phase 1: council grants are read from payment descriptions"
+  planning_keywords:
+    value: [DEVELOPMENT APPLICATION, PLANNING, REZONING, SUBDIVISION, SCHEME AMENDMENT]
+    source: "SPEC.md s7: has a planning matter decided. Read from agenda item titles"
+
+oag_control_weakness:
+  last_n_reports:
+    value: 2
+    source: "SPEC.md s7: named in the last two reports"
+  area_keywords:
+    value: [PURCHASING, PROCUREMENT, PAYMENT, PAYMENTS, PAYROLL, CREDITORS]
+    source: "SPEC.md s7: purchasing, payment or payroll control weaknesses"

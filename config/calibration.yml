@@ -1,0 +1,81 @@
+# Known cases the tool must find (SPEC.md section 9).
+# A run fails its own check if a case it can test does not rank near the top of its body.
+#
+# fixture: the planted cases in fixtures/make_fixture.py (SPEC.md section 10). Checked on
+#   every --fixture run: each must be a surfaced case in the top `top_n` of its body with at
+#   least the listed flags, and no other entity may carry any flag.
+# known_cases: real cases. Each is checked once its source is loaded (the phase given).
+
+fixture:
+  body_id: shire-of-example
+  top_n: 6
+  cases:
+    - id: planted-1-new-sole-trader
+      entity: Pearce Property Maintenance
+      expect_flags: [new_abn_payee, just_under_limit, repeat_round_amount]
+    - id: planted-2-civil-no-tender
+      entity: Dunmore Civil & Drainage
+      expect_flags: [over_threshold_no_tender, just_under_limit, unmatched_payee]
+    - id: planted-3-gift-and-cover-bids
+      entity: Greenway Landscapes Pty Ltd
+      expect_flags: [gift_from_payee, cover_bidding]
+    - id: planted-4-undeclared-directorship
+      entity: Cardell Strategic Consulting Pty Ltd
+      expect_flags: [interest_matches_payee, undeclared_at_meeting]
+    - id: planted-5-post-award-overrun
+      entity: Westridge Construction Pty Ltd
+      expect_flags: [post_award_overrun, repeat_winner]
+    - id: planted-6-undeclared-related-party
+      entity: Tarrant Holdings Pty Ltd
+      expect_flags: [related_party_not_declared, repeat_round_amount]
+
+known_cases:
+  - id: paladin-home-affairs
+    body: Department of Home Affairs
+    period: 2017-18
+    source: AusTender
+    pattern: limited tender, large value, amendments
+    flags: [limited_tender_concentration, amendment_creep]
+    phase: 6
+  - id: eaa-water-purchase
+    body: Department of Agriculture
+    period: "2017"
+    source: AusTender
+    pattern: limited tender, high price
+    flags: [limited_tender_concentration]
+    phase: 6
+  - id: community-sport-infrastructure
+    body: Community Sport Infrastructure grants
+    period: 2018-19
+    source: GrantConnect; ANAO report 2020
+    pattern: grants to marginal seats
+    flags: [grants_marginal_seats]
+    phase: 6
+  - id: shire-of-dowerin
+    body: Shire of Dowerin
+    period: 2013 to 2015
+    source: council minutes (accounts paid), CCC and court records
+    pattern: CEO fraud of about $600,000 through false payments
+    flags: [new_abn_payee, repeat_round_amount, unmatched_payee]
+    phase: 3
+  - id: city-of-perth-inquiry
+    body: City of Perth
+    period: 2020 inquiry report
+    source: council minutes, gifts register, interest returns
+    pattern: governance failures the disclosure and gift flags should see
+    flags: [gift_from_payee, undeclared_at_meeting, interest_matches_payee]
+    phase: 4
+  - id: communities-whyte
+    body: Department of Communities (WA)
+    period: 2008 to 2019
+    source: state level; template only
+    pattern: approver-controlled companies, invoices for work never done
+    flags: [new_abn_payee, repeat_round_amount, unmatched_payee]
+    phase: template
+  - id: dps-furniture-exit
+    body: Department of Parliamentary Services
+    period: 2021 to 2025
+    source: Transparency Portal tables, AusTender
+    pattern: in-house build never on AusTender; exit payment
+    flags: [in_house_spend, payout_outlier]
+    phase: 7

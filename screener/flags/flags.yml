@@ -1,0 +1,69 @@
+# Weights and strength for every flag. Thresholds live in config/thresholds.yml.
+# A flag's SQL file is <name>.sql in this folder and returns
+#   entity_id, body_id, flag, score, evidence_json
+# plus optional money, facts (JSON object used by the detail template) and match_basis
+# (strong flags only: exact, abn, confirmed or fuzzy).
+
+weights:
+  weak: 1
+  medium: 2
+  strong: 4
+
+flags:
+  over_threshold_no_tender:
+    layer: council
+    strength: medium
+    detail: "Paid ${total:,.0f} in {fy} across {n} payments, over the ${threshold:,.0f} tender threshold, with no tender won that year or the year before."
+  just_under_limit:
+    layer: council
+    strength: medium
+    detail: "{n} payments within {window_months} months each between 90% and 100% of the {limit_name} limit of ${limit_amount:,.0f}, from {start}."
+  repeat_round_amount:
+    layer: council
+    strength: weak
+    detail: "Paid about ${rounded:,.0f} {n} times within {window_months} months, from {start}, with no lease, rent or similar in the description."
+  new_abn_payee:
+    layer: council
+    strength: medium
+    detail: "ABN {abn} active from {status_from}, {days} days before the first payment on {first_paid}; ${total:,.0f} paid in the following twelve months."
+  unmatched_payee:
+    layer: council
+    strength: weak
+    detail: "Paid ${total:,.0f} in {fy} and matches no ABN and no tenderer."
+  gift_from_payee:
+    layer: council
+    strength: strong
+    detail: "{recipient} ({role}) received a ${value:,.0f} gift on {received} from {giver}, who was a {kinds} of the council within twelve months of the gift."
+  interest_matches_payee:
+    layer: council
+    strength: strong
+    detail: "{person} ({role}) declared a {interest_type} in {entity} ({return_type} return, {return_date}); the entity is a {kinds} of the council (${paid:,.0f} paid)."
+  undeclared_at_meeting:
+    layer: council
+    strength: strong
+    detail: "Item {item_ref} on {meeting_date} names {entity}, declared in {person}'s return as a {interest_type}; no disclosure by {person} is recorded for that item."
+  cover_bidding:
+    layer: council
+    strength: medium
+    detail: "Won {n_wins} tenders ({refs}) against the same losers every time: {losers}."
+  post_award_overrun:
+    layer: council
+    strength: medium
+    detail: "Tender {tender_ref} awarded {awarded} at ${contract:,.0f}; ${total:,.0f} paid in the {window_months} months after ({pct:.0f}% of contract), with no later tender or variation recorded."
+  repeat_winner:
+    layer: council
+    strength: weak
+    detail: "Won {wins} of {n} tenders in {fy} ({share:.0%})."
+  related_party_not_declared:
+    layer: council
+    strength: medium
+    detail: "Named in the {fy} related party note (${amount:,.0f}, {nature}) but in no interest return of the council."
+  campaign_funder_wins:
+    layer: council
+    strength: medium
+    detail: "Gave ${value:,.0f} to candidate {candidate} for the {election} election, then {outcomes} within two years."
+  oag_control_weakness:
+    layer: council
+    strength: context
+    multiplier: 1.25
+    detail: "Named by the Auditor General for {areas} control weaknesses ({reports})."
